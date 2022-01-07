@@ -29,9 +29,10 @@ def downloadPDF(url):
     #Do some testing to make sure folder exists
 
     if(platform.system() == 'Windows'):
-        linuxdirectory = '/home/ubuntu/Honolulu-PD-Arrest-Reports/'
-    else:
         linuxdirectory = ""
+    else:
+        linuxdirectory = '/home/ubuntu/Honolulu-PD-Arrest-Reports/'
+
 
     foldername = linuxdirectory + "ArrestLogPDFs"
     folder_exists = os.path.isdir(foldername)
