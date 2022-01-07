@@ -3,6 +3,7 @@ from bs4 import BeautifulSoup
 import os
 from datetime import datetime
 import pytz
+import platform
 
 #TODO: 1) Add in some catches for if the website is down or under construction
 #TODO: 2) Add in some checks and an alert if the website is down or no <a> can be found.
@@ -26,7 +27,13 @@ def getPDF():
 
 def downloadPDF(url):
     #Do some testing to make sure folder exists
-    foldername = "ArrestLogPDFs"
+
+    if(platform.system() == 'Windows'):
+        linuxdirectory = '/home/ubuntu/Honolulu-PD-Arrest-Reports/'
+    else:
+        linuxdirectory = ""
+
+    foldername = linuxdirectory + "ArrestLogPDFs"
     folder_exists = os.path.isdir(foldername)
     # If folder doesn't exist, then create it.
     if folder_exists != True:
