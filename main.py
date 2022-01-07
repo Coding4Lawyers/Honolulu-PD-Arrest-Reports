@@ -58,5 +58,6 @@ if __name__ == '__main__':
     try:
         print("Attempting to scrape Arrest Logs",datetime.now(pytz.timezone('Pacific/Honolulu')))
         getPDF()
+        print("Successful")
     except Exception as e:
         print(e)
