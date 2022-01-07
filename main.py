@@ -48,12 +48,14 @@ def downloadPDF(url):
     timestamp = datetime.now(pytz.timezone('Pacific/Honolulu'))
     datetimestamp = timestamp.strftime('%Y-%m-%d')
     pdfname = foldername + '/' + datetimestamp + "@@@" + url[54:]
-
+    print("Saving to ",pdfname)
     #Write the data from the request to a PDF file
-    pdf = open(pdfname, 'wb')
-    pdf.write(r.content)
-    pdf.close()
-
+    try:
+        pdf = open(pdfname, 'wb')
+        pdf.write(r.content)
+        pdf.close()
+    except Exception as e:
+        print(e)
 if __name__ == '__main__':
     try:
         print("Attempting to scrape Arrest Logs",datetime.now(pytz.timezone('Pacific/Honolulu')))
