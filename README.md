@@ -1,12 +1,14 @@
 # Honolulu-PD-Arrest-Reports
- A program which scrapes and saves the HPD Arrest PDFs.
+A program which scrapes and saves the Honolulu Police Department Arrest PDF at https://www.honolulupd.org/information/arrest-logs/
  
- ## TODO
- - Move saving of PDFs to an s3 bucket
- - Add in tests
- - Add in error notifications so someone can be notified if their website changes.
+## TODO
+1) Add in some catches for if the website is down or under construction
+2) Add in some checks and an alert if the website is down or no ```<a>``` can be found.
+3) Add in better logging
+4) Right now we grab the first ```<a>``` but we should probably check to see if they have added a new pdf or for some reason they add two at once.
 
- ## Setup
+## Setup
+Rename the passwords.example.py to passwords.py and add in credentials.
  ```
  git@github.com:Coding4Lawyers/Honolulu-PD-Arrest-Reports.git
  cd Honolulu-PD-Arrest-Reports
@@ -15,7 +17,8 @@
  pip install -r requirements.txt
  python main.py
  ```
- Cronjob
+Cronjob
  ```
- 0 14 * * * /home/ubuntu/Honolulu-PD-Arrest-Reports/venv/bin/python /home/ubuntu/Honolulu-PD-Arrest-Reports/main.py > /home/ubuntu/Honolulu-PD-Arrest-Reports/cronlog.log 2>&1
+ 0 14 * * * /home/ubuntu/Honolulu-PD-Arrest-Reports/venv/bin/python /home/ubuntu/Honolulu-PD-Arrest-Reports/main.py >> /home/ubuntu/Honolulu-PD-Arrest-Reports/cronlog.log 2>&1
+
  ```

@@ -3,12 +3,10 @@ from bs4 import BeautifulSoup
 import os
 from datetime import datetime
 import pytz
-import platform
+import time
+import boto3
+import passwords
 
-#TODO: 1) Add in some catches for if the website is down or under construction
-#TODO: 2) Add in some checks and an alert if the website is down or no <a> can be found.
-#TODO: 3) Build a PDF Parser
-#TODO: 4) Move the file saving to s3 so we don't run out of space.
 
 def getPDF():
     #Sends the request to get the webpage where the PDF links are
@@ -23,44 +21,76 @@ def getPDF():
     atag = arrestdiv.find('a')
 
     #Call the downloadPDF function and pass to it the url of the top <a> which should be the link we want.
-    downloadPDF(atag['href'])
+    return downloadPDF(atag['href'])
 
 def downloadPDF(url):
     #Do some testing to make sure folder exists
 
-    if(platform.system() == 'Windows'):
-        linuxdirectory = ""
-    else:
-        linuxdirectory = '/home/ubuntu/Honolulu-PD-Arrest-Reports/'
+    #Make the request to the url with the PDF we want
+    r = requests.get(url, stream=True)
+    #print("Status Code",r.status_code)
+    if(r.status_code != 200):
+        print("Error Status Code",r.status_code)
+        return False
+    if(len(r.content) < 10000):
+        print("Error in length of PDF",len(r.content))
+        return False
 
+    pdffilename = url[54:]
 
-    foldername = linuxdirectory + "ArrestLogPDFs"
+    #Write the data from the request to a PDF file
+
+    #Write file to s3
+    writeFileToS3(r.content,passwords.aws_bucket_name,pdffilename)
+
+    #Write file locally
+    #savePDFLocally(r.content,pdffilename)
+
+    return True
+
+def savePDFLocally(content,pdfname):
+    foldername = "ArrestLogPDFs"
     folder_exists = os.path.isdir(foldername)
     # If folder doesn't exist, then create it.
     if folder_exists != True:
         os.makedirs(foldername)
 
-    #Make the request to the url with the PDF we want
-    r = requests.get(url, stream=True)
+    pdfname = foldername + "/" + pdfname
+    pdf = open(pdfname, 'wb')
+    pdf.write(content)
+    pdf.close()
+def writeFileToS3(content, bucket, filename):
+    #Upload content from the request response to s3 so we never have to save the file locally.
 
-    #Create a file name that consists of the a timestamp of when we downloaded it and the name of the PDF from the url
-    #Seperate the two parts with @@@
-    #This way we can in theory build something later on to parse the timestamp from the file name if we need to.
-    timestamp = datetime.now(pytz.timezone('Pacific/Honolulu'))
-    datetimestamp = timestamp.strftime('%Y-%m-%d')
-    pdfname = foldername + '/' + datetimestamp + "@@@" + url[54:]
-    print("Saving to ",pdfname)
-    #Write the data from the request to a PDF file
-    try:
-        pdf = open(pdfname, 'wb')
-        pdf.write(r.content)
-        pdf.close()
-    except Exception as e:
-        print(e)
+    # Upload the file
+    session = boto3.Session(
+                             aws_access_key_id=passwords.aws_access_key_id,
+                             aws_secret_access_key=passwords.aws_secret_access_key
+                             )
+    s3 = session.resource('s3')
+    object = s3.Object(bucket, filename)
+    result = object.put(Body=content)
+
+    if(result['ResponseMetadata']['HTTPStatusCode'] != 200):
+        print("Error with S3")
+        print(result)
+
 if __name__ == '__main__':
+    x = 0
     try:
-        print("Attempting to scrape Arrest Logs",datetime.now(pytz.timezone('Pacific/Honolulu')))
-        getPDF()
-        print("Successful")
+        #We had problems with it not downloading right so now we try 5 times.
+        while x < 5:
+            print("Attempting to scrape Arrest Logs",datetime.now(pytz.timezone('Pacific/Honolulu')))
+            success = getPDF()
+
+            time.sleep(2)
+            if(success == True):
+                print("Successful")
+                break
+            else:
+                print("Failure Attempting Again",x)
+            x+=1
+
     except Exception as e:
+        print("Failure:")
         print(e)
