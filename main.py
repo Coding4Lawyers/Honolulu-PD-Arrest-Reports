@@ -27,7 +27,8 @@ def downloadPDF(url):
     #Do some testing to make sure folder exists
 
     #Make the request to the url with the PDF we want
-    r = requests.get(url, stream=True)
+    headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.110 Safari/537.36'}
+    r = requests.get(url, headers=headers, stream=True)
     #print("Status Code",r.status_code)
     if(r.status_code != 200):
         print("Error Status Code",r.status_code)
