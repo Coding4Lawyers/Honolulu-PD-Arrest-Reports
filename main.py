@@ -17,7 +17,7 @@ def getPDF():
     html = r.text
     soup = BeautifulSoup(html, 'lxml')
     #Get the div with all the anchor tags and then grab the first link which should be the most recent days link.
-    arrestdiv = soup.find('div', attrs={'class': 'entry-content'})
+    arrestdiv = soup.find('ul', attrs={'class': 'hpd-arrest-logs'})
     atag = arrestdiv.find('a')
 
     #Call the downloadPDF function and pass to it the url of the top <a> which should be the link we want.
