@@ -2,3 +2,4 @@ venv/
 .idea/
 /ArrestLogPDFs
 passwords.py
+__pycache__/

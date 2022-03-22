@@ -6,8 +6,17 @@ import pytz
 import time
 import boto3
 import passwords
+import sys
 
-
+def getFileNamesFromS3():
+    #Returns a list of all the filenames in the s3 bucket
+    session = boto3.Session(
+                             aws_access_key_id=passwords.aws_access_key_id,
+                             aws_secret_access_key=passwords.aws_secret_access_key
+                             )
+    s3 = session.resource('s3')
+    my_bucket = s3.Bucket(passwords.aws_bucket_name)
+    return [object_summary.key for object_summary in my_bucket.objects.filter()]
 def getPDF():
     #Sends the request to get the webpage where the PDF links are
     url = 'https://www.honolulupd.org/information/arrest-logs/'
@@ -18,14 +27,20 @@ def getPDF():
     soup = BeautifulSoup(html, 'lxml')
     #Get the div with all the anchor tags and then grab the first link which should be the most recent days link.
     arrestdiv = soup.find('ul', attrs={'class': 'hpd-arrest-logs'})
-    atag = arrestdiv.find('a')
+    atags = arrestdiv.find_all('a')
 
+    s3filenames = getFileNamesFromS3()
+    links_to_download = []
+    for atag in atags:
+        if(atag.text not in s3filenames):
+            links_to_download.append(atag['href'])
+
+    return links_to_download
     #Call the downloadPDF function and pass to it the url of the top <a> which should be the link we want.
-    return downloadPDF(atag['href'])
+
+    #return downloadPDF(atag['href'])
 
 def downloadPDF(url):
-    #Do some testing to make sure folder exists
-
     #Make the request to the url with the PDF we want
     headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.110 Safari/537.36'}
     r = requests.get(url, headers=headers, stream=True)
@@ -77,20 +92,26 @@ def writeFileToS3(content, bucket, filename):
         print(result)
 
 if __name__ == '__main__':
-    x = 0
     try:
-        #We had problems with it not downloading right so now we try 5 times.
-        while x < 5:
-            print("Attempting to scrape Arrest Logs",datetime.now(pytz.timezone('Pacific/Honolulu')))
-            success = getPDF()
-
-            time.sleep(2)
-            if(success == True):
-                print("Successful")
-                break
-            else:
-                print("Failure Attempting Again",x)
-            x+=1
+        print("Attempting to scrape Arrest Logs",datetime.now(pytz.timezone('Pacific/Honolulu')))
+        links_to_download = getPDF()
+        print("We found",len(links_to_download),"PDFs to download")
+        if(len(links_to_download) == 0):
+            print("No links to download")
+            sys.exit()
+        for link_to_download in links_to_download:
+            # We had problems with it not downloading right so now we try 5 times.
+            print(link_to_download)
+            x =0
+            while x < 5:
+                success = downloadPDF(link_to_download)
+                time.sleep(2)
+                if(success == True):
+                    print("Successful")
+                    break
+                else:
+                    print("Failure Attempting Again",x)
+                x+=1
 
     except Exception as e:
         print("Failure:")
