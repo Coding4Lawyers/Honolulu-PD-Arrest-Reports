@@ -1,0 +1,25 @@
+name: Scrape HNL PD Reports
+
+# on: push
+on:
+  schedule:
+    - cron: '5 4 * * *' #Every Day
+  workflow_dispatch: {}
+jobs:
+  scraper:
+    runs-on: ubuntu-latest
+
+    env: # Or as an environment variable
+      aws_access_key_id: ${{ secrets.aws_access_key_id }}
+      aws_secret_access_key: ${{ secrets.aws_secret_access_key }}
+      aws_bucket_name: ${{ secrets.aws_bucket_name }}
+
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Scrape-HNL-PD-Reports
+        run: |
+          sudo apt-get update
+          pip install -r requirements.txt
+          python main.py
