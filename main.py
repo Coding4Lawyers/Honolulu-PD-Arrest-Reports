@@ -75,20 +75,20 @@ def savePDFLocally(content,pdfname):
     pdf.write(content)
     pdf.close()
 def writeFileToS3(content, filename):
-    #Upload content from the request response to s3 so we never have to save the file locally.
+    # Upload content from the request response to s3 so we never have to save the file locally.
 
     # Upload the file
     session = boto3.Session(
-                             aws_access_key_id=os.environ.get('aws_access_key_id'),
-                             aws_secret_access_key=os.environ.get('aws_secret_access_key')
-                             )
+        aws_access_key_id=os.environ.get('aws_access_key_id'),
+        aws_secret_access_key=os.environ.get('aws_secret_access_key')
+    )
     s3 = session.resource('s3')
     object = s3.Object(os.environ.get('aws_bucket_name'), filename)
     result = object.put(Body=content)
 
-    if(result['ResponseMetadata']['HTTPStatusCode'] != 200):
-        print("Error with S3")
-        print(result)
+    if result['ResponseMetadata']['HTTPStatusCode'] != 200:
+        raise Exception("Error with S3: " + str(result))
+
 
 if __name__ == '__main__':
     try:
