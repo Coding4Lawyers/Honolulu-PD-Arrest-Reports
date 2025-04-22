@@ -6,24 +6,25 @@ import pytz
 import time
 import boto3
 import sys
+from dotenv import load_dotenv
 
 def getFileNamesFromS3():
     #Returns a list of all the filenames in the s3 bucket
     session = boto3.Session(
-                             aws_access_key_id=os.environ.get('aws_access_key_id'),
-                             aws_secret_access_key=os.environ.get('aws_secret_access_key')
-                             )
+        aws_access_key_id=os.environ.get('aws_access_key_id'),
+        aws_secret_access_key=os.environ.get('aws_secret_access_key')
+    )
     s3 = session.resource('s3')
     my_bucket = s3.Bucket(os.environ.get('aws_bucket_name'))
     return [object_summary.key for object_summary in my_bucket.objects.filter()]
 def getPDF():
     #Sends the request to get the webpage where the PDF links are
     url = 'https://www.honolulupd.org/information/arrest-logs/'
-    headers = \
-        {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.110 Safari/537.36'}
+    headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36'}
+
     r = requests.get(url, headers=headers)
     html = r.text
-    soup = BeautifulSoup(html, 'lxml')
+    soup = BeautifulSoup(html, 'html.parser')
     #Get the div with all the anchor tags and then grab the first link which should be the most recent days link.
     arrestdiv = soup.find('ul', attrs={'class': 'hpd-arrest-logs'})
     atags = arrestdiv.find_all('a')
@@ -41,7 +42,7 @@ def getPDF():
 
 def downloadPDF(url):
     #Make the request to the url with the PDF we want
-    headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.110 Safari/537.36'}
+    headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36'}
     r = requests.get(url, headers=headers, stream=True)
     #print("Status Code",r.status_code)
     if(r.status_code != 200):
@@ -92,6 +93,8 @@ def writeFileToS3(content, filename):
 
 if __name__ == '__main__':
     try:
+        # Uncomment this line if you're running locally and want to use the .env file
+        # load_dotenv(dotenv_path='HPDArrest.env')
         print("Attempting to scrape Arrest Logs",datetime.now(pytz.timezone('Pacific/Honolulu')))
         links_to_download = getPDF()
         print("We found",len(links_to_download),"PDFs to download")

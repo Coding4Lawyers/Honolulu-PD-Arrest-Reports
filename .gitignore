@@ -3,3 +3,4 @@ venv/
 /ArrestLogPDFs
 passwords.py
 __pycache__/
+HPDArrest.env
